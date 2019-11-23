@@ -22,9 +22,37 @@ bl_info = {
     "category" : "Generic"
 }
 
+import bpy
+
+
+
+class CreateCameraByAEOperator(bpy.types.Operator):
+    bl_idname = "object.createcamerabyae"
+    bl_label = "Create Camera By AE"
+    bl_options = {'REGISTER', 'UNDO'}  # Enable undo for the operator.
+
+
+    def execute(self, context):
+        scene = context.scene
+        for obj in scene.objects:
+            obj.location.x += 1.0
+
+        return {'FINISHED'}
+
 def register():
     ...
     print("hello pampa")
+    bpy.utils.register_class(CreateCameraByAEOperator)
+
 
 def unregister():
     ...
+    print("bye pampa")
+    bpy.utils.unregister_class(CreateCameraByAEOperator)
+
+
+
+# This allows you to run the script directly from Blender's Text editor
+# to test the add-on without having to install it.
+if __name__ == "__main__":
+    register()
