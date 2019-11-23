@@ -17,7 +17,7 @@ bl_info = {
     "description" : "import data from after effects into blender",
     "blender" : (2, 80, 0),
     "version" : (0, 0, 1),
-    "location" : "View3D",
+    # "location" : "View3D",
     "warning" : "",
     "category" : "Generic"
 }
@@ -39,16 +39,44 @@ class CreateCameraByAEOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+class AE2BlenderPanel(bpy.types.Panel):
+    """Creates a Panel in the scene context of the properties editor"""
+    bl_label = "AE 2 Blender"
+    bl_idname = "SCENE_AE2BL_layout"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+    def draw(self,context):
+        layout = self.layout
+        scene = context.scene
+
+
+        row = layout.column(align=True)
+        row.operator("object.createcamerabyae",text="Create Camera",icon="CAMERA_DATA")
+
+
+        layout.label(text=" Hello Pampa!")
+
+
+
 def register():
     ...
     print("hello pampa")
+
     bpy.utils.register_class(CreateCameraByAEOperator)
+
+    bpy.utils.register_class(AE2BlenderPanel)
 
 
 def unregister():
     ...
     print("bye pampa")
+
     bpy.utils.unregister_class(CreateCameraByAEOperator)
+
+    bpy.utils.unregister_class(AE2BlenderPanel)
 
 
 
