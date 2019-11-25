@@ -62,6 +62,70 @@ def pasteKeyframesAE(self):
                 applyTransformData(target)
 
 
+# CREATE AN EMPTY OBJECT WITH AE KEYFRAME DATA
+
+def createEmptyAE(self):
+    if checkClipboard(self):
+        bpy.ops.object.empty_add(type='PLAIN_AXES')
+        target = bpy.context.object
+        
+        applyTransformData(target)
+
+# CREATE A PLANE OBJECT WITH AE KEYFRAME DATA
+
+def createPlaneAE(self):
+    if checkClipboard(self):
+
+        # **** add an empty and a plane , then set empty as parent of plane *****
+        # add a plane
+        planeName = "planeByAE"
+        bpy.ops.mesh.primitive_plane_add()
+        bpy.context.active_object.name = planeName
+
+        # set properties for plane
+        plane = bpy.data.objects[planeName]
+        t_rot = (math.radians(-90), math.radians(180), math.radians(0))
+        plane.rotation_mode = 'XYZ'
+        plane.rotation_euler = (t_rot)
+        width = 1
+        height = 1
+        # Find Width and Hieght from Clipbard
+        clipboard = bpy.context.window_manager.clipboard
+        if clipboard != "":
+            keyFrameData = clipboard.split()
+            wordNum = 0
+            scale = bpy.context.scene.AEScale_property
+            while wordNum < 30:
+                if keyFrameData[wordNum] == "Width":
+                    width = float(keyFrameData[wordNum + 1]) / scale
+                if keyFrameData[wordNum] == "Height":
+                    height = float(keyFrameData[wordNum + 1]) / scale
+                wordNum += 1
+        plane.scale.x = width / 2
+        plane.scale.y = height / 2
+
+
+        # add an empty
+        emptyName = "planeByAE_Transform"            
+        bpy.ops.object.empty_add(type='PLAIN_AXES')
+        bpy.context.active_object.name = emptyName
+        bpy.data.objects[emptyName].select_set(True)
+
+        # set parent for plane 
+        plane.select_set(True)
+
+        bpy.ops.object.parent_set(type='OBJECT')
+
+
+        # deselect plane
+        bpy.data.objects[planeName].select_set(False)
+
+        # get empty to set after effects data  
+        target = bpy.data.objects[emptyName]
+        applyTransformData(target)
+
+
+
 def applyTransformData(target):
     # Load string from Clipboard
     clipboard = bpy.context.window_manager.clipboard
@@ -445,8 +509,7 @@ class CreatePlaneByAEOperator(bpy.types.Operator):
 
 
     def execute(self, context):
-
-
+        createPlaneAE(self)
         return {'FINISHED'}
 
 
