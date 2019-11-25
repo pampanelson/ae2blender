@@ -53,6 +53,13 @@ def checkClipboard(self):
 
 
 
+# PASTE AE KEYFRAME DATA TO ALL SELECTED OBJECTS
+
+def pasteKeyframesAE(self):
+    if checkClipboard(self):
+        for target in bpy.context.scene.objects:
+            if target.select == 1:
+                applyTransformData(target)
 
 
 def applyTransformData(target):
@@ -271,8 +278,109 @@ def applyTransformData(target):
 
 
 
+# SCALE CALCULATOR FUNCTIONS
+
+def setMarker1AE(self):
+    if checkClipboard(self):
+        # Load string from Clipboard
+        clipboard = bpy.context.window_manager.clipboard
+        
+        if clipboard != "":
+            # Parse Keyframe Data into new Variable, change capitalize e's for proper float parsing
+            keyFrameData = clipboard.replace('e','E').split()
+            
+            # Set common variables
+            wordNum = 0
+            maxWords = len(keyFrameData)
+            isLoop = 0
+            
+            # Go through each word in keyFrame Data
+            while wordNum < maxWords:
+                
+                if "Transform" in keyFrameData[wordNum]:
+                    wordNum += 1
+                    
+                    if "Position" in keyFrameData[wordNum]:
+                        wordNum += 8
+                        if keyFrameData[wordNum + 3].replace('.','',1).isdigit():
+                            bpy.context.scene.AEm1x_property = float(keyFrameData[wordNum + 1])
+                            bpy.context.scene.AEm1y_property = float(keyFrameData[wordNum + 3])
+                            bpy.context.scene.AEm1z_property = float(keyFrameData[wordNum + 2])
+                        else:
+                            bpy.context.scene.AEm1x_property = float(keyFrameData[wordNum])
+                            bpy.context.scene.AEm1y_property = float(keyFrameData[wordNum + 2])
+                            bpy.context.scene.AEm1z_property = float(keyFrameData[wordNum + 1])
+                        
+                wordNum += 1
+
+def setMarker2AE(self):
+    if checkClipboard(self):
+        # Load string from Clipboard
+        clipboard = bpy.context.window_manager.clipboard
+        
+        if clipboard != "":
+            # Parse Keyframe Data into new Variable, change capitalize e's for proper float parsing
+            keyFrameData = clipboard.replace('e','E').split()
+            
+            # Set common variables
+            wordNum = 0
+            maxWords = len(keyFrameData)
+            isLoop = 0
+            
+            # Go through each word in keyFrame Data
+            while wordNum < maxWords:
+                
+                if "Transform" in keyFrameData[wordNum]:
+                    wordNum += 1
+                    
+                    if "Position" in keyFrameData[wordNum]:
+                        wordNum += 8
+                        if keyFrameData[wordNum + 3].replace('.','',1).isdigit():
+                            bpy.context.scene.AEm2x_property = float(keyFrameData[wordNum + 1])
+                            bpy.context.scene.AEm2y_property = float(keyFrameData[wordNum + 3])
+                            bpy.context.scene.AEm2z_property = float(keyFrameData[wordNum + 2])
+                        else:
+                            bpy.context.scene.AEm2x_property = float(keyFrameData[wordNum])
+                            bpy.context.scene.AEm2y_property = float(keyFrameData[wordNum + 2])
+                            bpy.context.scene.AEm2z_property = float(keyFrameData[wordNum + 1])
+                        
+                wordNum += 1
+
+def calculateScaleAE(self):
+    m1x = bpy.context.scene.AEm1x_property
+    m1y = bpy.context.scene.AEm1y_property
+    m1z = bpy.context.scene.AEm1z_property
+    m2x = bpy.context.scene.AEm2x_property
+    m2y = bpy.context.scene.AEm2y_property
+    m2z = bpy.context.scene.AEm2z_property
+    
+    x = 0
+    y = 0
+    z = 0
+    
+    if m1x > m2x:
+        x = m1x - m2x
+    else:
+        x = m2x - m1x
+    
+    if m1y > m2y:
+        y = m1y - m2y
+    else:
+        y = m2y - m1y
+    
+    if m1z > m2z:
+        z = m1z - m2z
+    else:
+        z = m2z - m1z
+    
+    w = math.sqrt(x * x + y * y)
+    distance = math.sqrt(w * w + z * z)
+    
+    bpy.context.scene.AEScale_property = distance / bpy.context.scene.AEDist_property
 
 
+
+# ==========================================  Operators ==================
 class DebugOperator(bpy.types.Operator):
     bl_idname = "object.ae2blender_debug"
     bl_label = "Debug"
@@ -296,37 +404,6 @@ class CreateCameraByAEOperator(bpy.types.Operator):
 
     def execute(self, context):
         if checkClipboard(self):
-            # # Create Transform Object
-            # bpy.ops.object.empty_add(type='PLAIN_AXES')
-
-            # # not work for 2.81 ?? ----------------------   TODO
-            # # target = bpy.context.object 
-            # target = bpy.context.active_object
-            # target.name = "Camera_Transform"
-            
-            # # Create Camera Object
-            # bpy.ops.object.camera_add()
-            # # camera = bpy.context.object
-            # camera = bpy.context.active_object
-            # t_rot = (math.radians(-90), math.radians(180), math.radians(0))
-            # camera.rotation_mode = 'XYZ'
-            # camera.rotation_euler = (t_rot)
-            
-            # # Parent Camera to Transform Object
-            # # target.select = True
-            # # camera.select = True
-            # camera.select_set(state=True)
-
-            # target.select_set(state=True)
-
-
-            # # bpy.context.scene.objects.active = target
-            # bpy.ops.object.parent_set()
-            # # camera.select = False
-            # camera.select_set(state=False)
-            
-
-
             # **** add an empty and a camera , then set empty as parent of camera *****
             # add a camera
             cameraName = "CameraByAE"
@@ -384,6 +461,47 @@ class CreateEmptyByAEOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class A2BPasteAEFrameOperator(bpy.types.Operator):
+    """Paste Keyframe Data to Selected Objects"""
+    bl_idname = "object.ae_pastekeys_operator"
+    bl_label = "AE Paste Keyframes Operator"
+
+    def execute(self, context):
+        pasteKeyframesAE(self)
+        return {'FINISHED'}
+
+
+
+class A2BSetMarker1Operator(bpy.types.Operator):
+    """Set Values for Marker 1"""
+    bl_idname = "object.ae_marker1_operator"
+    bl_label = "AE Set Marker 1 Operator"
+
+    def execute(self, context):
+        setMarker1AE(self)
+        return {'FINISHED'}
+
+class A2BSetMarker2Operator(bpy.types.Operator):
+    """Set Values for Marker 2"""
+    bl_idname = "object.ae_marker2_operator"
+    bl_label = "AE Set Marker 2 Operator"
+
+    def execute(self, context):
+        setMarker2AE(self)
+        return {'FINISHED'}
+
+class A2BSetScaleOperator(bpy.types.Operator):
+    """Set Scale based on distance between Markers"""
+    bl_idname = "object.ae_setscale_operator"
+    bl_label = "AE Calculate Scale Operator"
+
+    def execute(self, context):
+        calculateScaleAE(self)
+        return {'FINISHED'}
+
+
+# ----------------------------------------------------------------------------
+
 
 class AE2BlenderPanel(bpy.types.Panel):
     """Creates a Panel in the scene context of the properties editor"""
@@ -397,14 +515,47 @@ class AE2BlenderPanel(bpy.types.Panel):
         layout = self.layout
         # scene = context.scene
 
+        # properties 
+        row = layout.row()
+        row.prop(context.scene, "AEScale_property", text = "Scale")
+        
+        row = layout.column(align=True)
+        col = row.split(align=True)
+        col.operator("object.ae_marker1_operator", text = "Marker 1")
+        col.operator("object.ae_marker2_operator", text = "Marker 2")
+        row.prop(context.scene, "AEDist_property", text = "Distance")
+        row.operator("object.ae_setscale_operator", text = "Calculate Scale", icon = "DRIVER_DISTANCE")
+        
+        row = layout.row()
+        row.label(text="Delta Rotation:")
+        
+        row = layout.row()
+        row.prop(context.scene, "AERotation_property", expand=True)
+        
+        row = layout.row()
+        row.label(text="Starting Position:")
+        
+        row = layout.row()
+        row.prop(context.scene, "AEPosition_property", expand=True)
+        
+        row = layout.row()
+        row.label(text="Starting Frame:")
+        
+        row = layout.row()
+        row.prop(context.scene, "AEFrame_property", expand=True)
+        
+        row = layout.row()
 
+
+
+        # buttons 
         row = layout.column(align=True)
         row.operator("object.create_camera_by_ae",text="Create Camera",icon="CAMERA_DATA")
         row.operator("object.create_empty_by_ae",text="Create Empty",icon="EMPTY_DATA")
         row.operator("object.create_plane_by_ae",text="Create Plane",icon="MESH_PLANE")
 
         if _Debug:
-            row.operator("object.ae2blender_debug",text="Debug",icon="MESH_PLANE")
+            row.operator("object.ae2blender_debug",text="Debug",icon="FUND")
 
         
         layout.label(text=" Hello Pampa!")
@@ -418,6 +569,13 @@ def register():
     bpy.utils.register_class(CreateCameraByAEOperator)
     bpy.utils.register_class(CreateEmptyByAEOperator)
     bpy.utils.register_class(CreatePlaneByAEOperator)
+
+    bpy.utils.register_class(A2BPasteAEFrameOperator)
+    bpy.utils.register_class(A2BSetMarker1Operator)
+    bpy.utils.register_class(A2BSetMarker2Operator)
+    bpy.utils.register_class(A2BSetScaleOperator)
+
+
     if _Debug:
         bpy.utils.register_class(DebugOperator)
 
@@ -431,6 +589,15 @@ def unregister():
     bpy.utils.unregister_class(CreateCameraByAEOperator)
     bpy.utils.unregister_class(CreateEmptyByAEOperator)
     bpy.utils.unregister_class(CreatePlaneByAEOperator)
+
+
+    bpy.utils.unregister_class(A2BPasteAEFrameOperator)
+    bpy.utils.unregister_class(A2BSetMarker1Operator)
+    bpy.utils.unregister_class(A2BSetMarker2Operator)
+    bpy.utils.unregister_class(A2BSetScaleOperator)
+
+
+
     if _Debug:
         bpy.utils.unregister_class(DebugOperator)
 
